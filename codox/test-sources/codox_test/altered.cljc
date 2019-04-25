@@ -7,7 +7,7 @@
      :cljs (:require-macros [codox-test.alter-meta-cljs :refer [alter-the-meta-data! alter-the-meta-data-abs! copy-the-meta-data!]])))
 
 
-(defmacro altered-macro-with-root-relative-file[]
+(defmacro altered-macro-with-root-relative-file []
   '(println "it's good day to lie"))
 (alter-the-meta-data! codox-test.altered altered-macro-with-root-relative-file
                       {:doc "added doc"
@@ -16,7 +16,7 @@
 
 
 
-(defn altered-fn-with-source-relative-file[]
+(defn altered-fn-with-source-relative-file []
   '(prinln "I lie too"))
 (alter-the-meta-data! codox-test.altered altered-fn-with-source-relative-file
                       {:file "codox_test/multimethod.cljc"

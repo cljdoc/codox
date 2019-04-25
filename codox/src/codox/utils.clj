@@ -3,10 +3,10 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as str]))
 
-(defn- empty-seq?[x]
+(defn- empty-seq? [x]
   (and (seqable? x) (not (seq x))))
 
-(defn remove-empties[m]
+(defn remove-empties [m]
   (into {} (filter (comp not empty-seq? second) m)))
 
 (defn assoc-some
@@ -35,7 +35,7 @@
        (map count)
        (find-minimum)))
 
-(defn is-absolute?[file]
+(defn is-absolute? [file]
   (and file (.isAbsolute (io/file file))))
 
 (defn- find-file-in-repo
@@ -48,7 +48,7 @@
        (filter #(.exists %))
        first))
 
-(defn canonical-path[file]
+(defn canonical-path [file]
   (.getCanonicalPath (io/file file)))
 
 (defn unindent
