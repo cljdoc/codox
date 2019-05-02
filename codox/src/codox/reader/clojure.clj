@@ -79,6 +79,7 @@
 
 (defn- read-var [source-path vars var]
   (let [normalize (partial util/normalize-to-source-path source-path)]
+    (prn file)
     (-> (meta var)
         (include-record-factory-as-defrecord)
         (select-keys [:name :file :line :arglists :doc :dynamic
