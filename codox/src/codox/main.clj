@@ -3,10 +3,10 @@
   (:use [codox.utils :only (add-source-paths)])
   (:require [clojure.string :as str]
             [clojure.pprint]
-            [clojure.java.shell :as shell]
+            [clojure.java.io :as io]
             [codox.reader.clojure :as clj]
             [codox.reader.clojurescript :as cljs]
-            [codox.reader.plaintext :as text]))
+            [codox.utils :as util]))
 
 (defn- writer [{:keys [writer]}]
   (let [writer-sym (or writer 'codox.writer.html/write-docs)
@@ -44,9 +44,11 @@
         (update-in [:members] add-var-defaults defaults))))
 
 (defn- add-ns-defaults [namespaces defaults]
-  (for [namespace namespaces]
-    (-> (merge defaults namespace)
-        (update-in [:publics] add-var-defaults defaults))))
+  (if (seq defaults)
+    (for [namespace namespaces]
+      (-> (merge defaults namespace)
+          (update-in [:publics] add-var-defaults defaults)))
+    namespaces))
 
 (defn- ns-matches? [{ns-name :name} pattern]
   (cond
@@ -68,45 +70,26 @@
         (add-source-paths root-path source-paths)
         (add-ns-defaults metadata))))
 
-(defn- read-documents [{:keys [doc-paths doc-files] :or {doc-files :all}}]
-  (cond
-    (not= doc-files :all) (map text/read-file doc-files)
-    (seq doc-paths)       (->> doc-paths
-                               (apply text/read-documents)
-                               (sort-by :name))))
-
-(defn- git-commit [dir]
-  (let [{:keys [out exit] :as result} (shell/sh "git" "rev-parse" "HEAD" :dir dir)]
-    (when-not (zero? exit)
-      (throw (ex-info "Error getting git commit" result)))
-    (str/trim out)))
-
 (def defaults
   (let [root-path (System/getProperty "user.dir")]
     {:language     :clojure
      :root-path    root-path
      :output-path  "target/doc"
      :source-paths ["src"]
-     :doc-paths    ["doc"]
-     :doc-files    :all
      :namespaces   :all
      :exclude-vars #"^(map)?->\p{Upper}"
-     :metadata     {}
-     :themes       [:default]
-     :git-commit   (delay (git-commit root-path))}))
+     :metadata     {}}))
 
 (defn generate-docs
   "Generate documentation from source files."
   ([]
      (generate-docs {}))
   ([options]
-     (let [options    (merge defaults options)
-           write-fn   (writer options)
-           namespaces (read-namespaces options)
-           documents  (read-documents options)]
-       (write-fn (assoc options
-                        :namespaces namespaces
-                        :documents  documents)))))
+   (let [options    (-> (merge defaults options)
+                        (update :root-path util/canonical-path)
+                        (update :source-paths #(map util/canonical-path %)))
+         namespaces (read-namespaces options)]
+     (assoc options :namespaces namespaces))))
 
 (defn -main
   "The main entry point for reading API information from files in a directory.
